@@ -331,8 +331,10 @@ public class MainActivity extends AppCompatActivity {
                 getApplicationContext()
                         .getPackageName() + ".provider", file);
         intent.setDataAndType(apkURI, "application/pdf");
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+
         startActivity(intent);
     }
 
