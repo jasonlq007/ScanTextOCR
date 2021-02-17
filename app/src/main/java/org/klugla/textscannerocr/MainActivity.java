@@ -42,7 +42,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -149,8 +148,6 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.repeat).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-            Log.v("JSON1",String.valueOf(sectionLength));
-            Log.v("JSON2",String.valueOf(detectedText));
             String sectionHolder=  detectedText.substring(0,detectedText.length()-sectionLength);
             detectedText.setLength(0);
             detectedText.append(sectionHolder);
@@ -214,32 +211,32 @@ public class MainActivity extends AppCompatActivity {
         detectedTextView.setMovementMethod(new ScrollingMovementMethod());
     }
 
-    private void inspectFromBitmap(Bitmap bitmap) {
-        TextRecognizer textRecognizer = new TextRecognizer.Builder(this).build();
+    private void inspectScanTextBitmap(Bitmap bitmap) {
+        TextRecognizer scanTextRecognizer = new TextRecognizer.Builder(this).build();
         try {
-            if (!textRecognizer.isOperational()) {
+            if (!scanTextRecognizer.isOperational()) {
                 new AlertDialog.
                         Builder(this).
-                        setMessage("Text recognizer could not be set up on your device").show();
+                        setMessage("ScanText OCR could not be set up on your device").show();
                 return;
             }
 
-            Frame frame = new Frame.Builder().setBitmap(bitmap).build();
-            SparseArray<TextBlock> origTextBlocks = textRecognizer.detect(frame);
+            Frame imageFrame = new Frame.Builder().setBitmap(bitmap).build();
+            SparseArray<TextBlock> originalScanTextBlocks = scanTextRecognizer.detect(imageFrame);
             List<TextBlock> textBlocks = new ArrayList<>();
-            for (int i = 0; i < origTextBlocks.size(); i++) {
-                TextBlock textBlock = origTextBlocks.valueAt(i);
-                textBlocks.add(textBlock);
+            for (int i = 0; i < originalScanTextBlocks.size(); i++) {
+                TextBlock partTextBlock = originalScanTextBlocks.valueAt(i);
+                textBlocks.add(partTextBlock);
             }
             Collections.sort(textBlocks, new Comparator<TextBlock>() {
                 @Override
-                public int compare(TextBlock o1, TextBlock o2) {
-                    int diffOfTops = o1.getBoundingBox().top - o2.getBoundingBox().top;
-                    int diffOfLefts = o1.getBoundingBox().left - o2.getBoundingBox().left;
-                    if (diffOfTops != 0) {
-                        return diffOfTops;
+                public int compare(TextBlock part1, TextBlock part2) {
+                    int diffBoundTops = part1.getBoundingBox().top - part2.getBoundingBox().top;
+                    int diffBoundLefts = part1.getBoundingBox().left - part2.getBoundingBox().left;
+                    if (diffBoundTops != 0) {
+                        return diffBoundTops;
                     }
-                    return diffOfLefts;
+                    return diffBoundLefts;
                 }
             });
 
@@ -254,7 +251,7 @@ public class MainActivity extends AppCompatActivity {
             detectedTextView.setText(detectedText);
         }
         finally {
-            textRecognizer.release();
+            scanTextRecognizer.release();
         }
     }
     private void imageMode()
@@ -281,11 +278,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void exportPDF(String detectedText)
     {
-       // String fpath = "/sdcard/" + "ocr" + ".pdf";
-        SimpleDateFormat s = new SimpleDateFormat("ddMMyyyyhhmmss");
-        String format = s.format(new Date());
-        String fpath= Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString()+"/"+format+".pdf";
-        File file = new File(fpath);
+        SimpleDateFormat ocrDateFormat = new SimpleDateFormat("ddMMyyyyhhmmss");
+        String finalOCRFormat = ocrDateFormat.format(new Date());
+        String pdfOcrPath= Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString()+"/"+finalOCRFormat+".pdf";
+        File file = new File(pdfOcrPath);
         if (!file.exists()) {
             try {
                 file.createNewFile();
@@ -295,9 +291,9 @@ public class MainActivity extends AppCompatActivity {
         }
         // To customise the text of the pdf
         // we can use FontFamily
-        Font bfBold12 = new Font(Font.FontFamily.TIMES_ROMAN,
+        Font pdfBfBold12 = new Font(Font.FontFamily.TIMES_ROMAN,
                 12, Font.BOLD, new BaseColor(0, 0, 0));
-        Font bf12 = new Font(Font.FontFamily.TIMES_ROMAN,
+        Font pdfBf12 = new Font(Font.FontFamily.TIMES_ROMAN,
                 12);
         // create an instance of itext document
         Document document = new Document();
@@ -338,26 +334,26 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private void inspect(Uri uri) {
-        InputStream is = null;
-        Bitmap bitmap = null;
+    private void inspectOCR(Uri uri) {
+        InputStream inputStream = null;
+        Bitmap ocrBitmapObject = null;
         try {
-            is = getContentResolver().openInputStream(uri);
+            inputStream = getContentResolver().openInputStream(uri);
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inPreferredConfig = Bitmap.Config.ARGB_8888;
             options.inSampleSize = 2;
             options.inScreenDensity = DisplayMetrics.DENSITY_LOW;
-            bitmap = BitmapFactory.decodeStream(is, null, options);
-            inspectFromBitmap(bitmap);
+            ocrBitmapObject = BitmapFactory.decodeStream(inputStream, null, options);
+            inspectScanTextBitmap(ocrBitmapObject);
         } catch (FileNotFoundException e) {
             Log.w(TAG, "Failed to find the file: " + uri, e);
         } finally {
-            if (bitmap != null) {
-                bitmap.recycle();
+            if (ocrBitmapObject != null) {
+                ocrBitmapObject.recycle();
             }
-            if (is != null) {
+            if (inputStream != null) {
                 try {
-                    is.close();
+                    inputStream.close();
                 } catch (IOException e) {
                     Log.w(TAG, "Failed to close InputStream", e);
                 }
@@ -370,13 +366,13 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case REQUEST_GALLERY:
                 if (resultCode == RESULT_OK) {
-                    inspect(data.getData());
+                    inspectOCR(data.getData());
                 }
                 break;
             case REQUEST_CAMERA:
                 if (resultCode == RESULT_OK) {
                     if (imageUri != null) {
-                        inspect(imageUri);
+                        inspectOCR(imageUri);
                     }
                 }
                 break;
