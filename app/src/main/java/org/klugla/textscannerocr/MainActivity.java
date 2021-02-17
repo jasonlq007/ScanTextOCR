@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA = 1;
     private static final int MY_PERMISSIONS_REQUESTS = 0;
     StringBuilder detectedText = new StringBuilder();
+    static int sectionLength=0;
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -77,6 +78,18 @@ public class MainActivity extends AppCompatActivity {
                 // TODO: Take care of this case later
                 break;
         }
+    }
+    private void captureImage()
+    {
+        String filename = System.currentTimeMillis() + ".jpg";
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, filename);
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        Intent intent = new Intent();
+        intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        startActivityForResult(intent, REQUEST_CAMERA);
     }
 
     private void requestPermissions()
@@ -110,56 +123,89 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnExportToPdf).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-              exportPDF(detectedText.toString());
+              if (detectedText.toString().length()>0)
+              {
+                  exportPDF(detectedText.toString());
+              }
+              else
+              {
+                  Toast.makeText(getApplicationContext(),"Please capture a photo or choose an image from gallery",Toast.LENGTH_SHORT).show();
+
+              }
 
             }
         });
         findViewById(R.id.takeNextPhoto).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String filename = System.currentTimeMillis() + ".jpg";
-                ContentValues values = new ContentValues();
-                values.put(MediaStore.Images.Media.TITLE, filename);
-                values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-                imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-                Intent intent = new Intent();
-                intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-                startActivityForResult(intent, REQUEST_CAMERA);
+               imageMode();
+                if (detectedText.toString().length()>0)
+                    findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
+                else
+                    findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
+            }
+        });
+
+        findViewById(R.id.repeat).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+            Log.v("JSON1",String.valueOf(sectionLength));
+            Log.v("JSON2",String.valueOf(detectedText));
+            String sectionHolder=  detectedText.substring(0,detectedText.length()-sectionLength);
+            detectedText.setLength(0);
+            detectedText.append(sectionHolder);
+            detectedTextView.setText(detectedText);
+            captureImage();
             }
         });
 
         findViewById(R.id.finishBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                findViewById(R.id.takeNextPhoto).setVisibility(View.INVISIBLE);
-                findViewById(R.id.finishBtn).setVisibility(View.INVISIBLE);
-                findViewById(R.id.repeat).setVisibility(View.INVISIBLE);
-                findViewById(R.id.cancel_option).setVisibility(View.INVISIBLE);
-                findViewById(R.id.take_a_photo).setVisibility(View.VISIBLE);
-                findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
-                findViewById(R.id.detected_text).setVisibility(View.VISIBLE);
+                imageMode();
+                if (detectedText.toString().length()>0)
+                    findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
+                else
+                    findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
+
+
             }
         });
         findViewById(R.id.take_a_photo).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String filename = System.currentTimeMillis() + ".jpg";
-                ContentValues values = new ContentValues();
-                values.put(MediaStore.Images.Media.TITLE, filename);
-                values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-                imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-                Intent intent = new Intent();
-                intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-                startActivityForResult(intent, REQUEST_CAMERA);
-                findViewById(R.id.takeNextPhoto).setVisibility(View.VISIBLE);
-                findViewById(R.id.finishBtn).setVisibility(View.VISIBLE);
-                findViewById(R.id.repeat).setVisibility(View.VISIBLE);
-                findViewById(R.id.cancel_option).setVisibility(View.VISIBLE);
-                findViewById(R.id.take_a_photo).setVisibility(View.INVISIBLE);
-                findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
+                captureImage();
+                optionMode();
+                if (detectedText.toString().length()>0)
+                    findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
 
+            }
+        });
+        findViewById(R.id.btnGallery).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(intent, REQUEST_GALLERY);
+                optionMode();
+                if (detectedText.toString().length()>0)
+                    findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
+                else
+                    findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
+            }
+        });
+
+        findViewById(R.id.cancel_option).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                detectedTextView.setText("");
+                detectedText.setLength(0);
+                imageMode();
+                if (detectedText.toString().length()>0)
+                    findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
+                else
+                    findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
             }
         });
 
@@ -200,6 +246,7 @@ public class MainActivity extends AppCompatActivity {
             for (TextBlock textBlock : textBlocks) {
                 if (textBlock != null && textBlock.getValue() != null) {
                     detectedText.append(textBlock.getValue());
+                    sectionLength=textBlock.getValue().toString().length();
                     detectedText.append("\n");
                 }
             }
@@ -209,6 +256,27 @@ public class MainActivity extends AppCompatActivity {
         finally {
             textRecognizer.release();
         }
+    }
+    private void imageMode()
+    {
+        findViewById(R.id.takeNextPhoto).setVisibility(View.INVISIBLE);
+        findViewById(R.id.finishBtn).setVisibility(View.INVISIBLE);
+        findViewById(R.id.repeat).setVisibility(View.INVISIBLE);
+        findViewById(R.id.cancel_option).setVisibility(View.INVISIBLE);
+        findViewById(R.id.take_a_photo).setVisibility(View.VISIBLE);
+        findViewById(R.id.btnGallery).setVisibility(View.VISIBLE);
+        findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
+    }
+
+    private void optionMode()
+    {
+        findViewById(R.id.takeNextPhoto).setVisibility(View.VISIBLE);
+        findViewById(R.id.finishBtn).setVisibility(View.VISIBLE);
+        findViewById(R.id.repeat).setVisibility(View.VISIBLE);
+        findViewById(R.id.cancel_option).setVisibility(View.VISIBLE);
+        findViewById(R.id.take_a_photo).setVisibility(View.INVISIBLE);
+        findViewById(R.id.btnGallery).setVisibility(View.INVISIBLE);
+        findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
     }
 
     private void exportPDF(String detectedText)
