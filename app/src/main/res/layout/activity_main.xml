@@ -16,7 +16,7 @@
     android:layout_height="match_parent">
 
 
-    <TextView
+    <EditText
         android:id="@+id/detected_text"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -91,7 +91,7 @@
         android:layout_gravity="bottom|right"
         android:background="#ffffff"
         android:visibility="visible"
-        android:layout_margin="16dp"
+        android:layout_margin="5dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:src="@drawable/ic_custom_camera"/>
@@ -103,7 +103,7 @@
         android:layout_gravity="bottom|right"
         android:background="#ffffff"
         android:visibility="visible"
-        android:layout_margin="16dp"
+        android:layout_margin="5dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/take_a_photo"
         android:src="@drawable/ic_gallery"/>
@@ -114,10 +114,21 @@
         android:layout_gravity="bottom|right"
         android:background="#ffffff"
         android:visibility="visible"
-        android:layout_margin="16dp"
+        android:layout_margin="5dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/btnGallery"
         android:src="@drawable/ic_pdf"/>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/clear_option"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|right"
+        android:layout_margin="5dp"
+        android:background="#ffffff"
+        android:src="@drawable/ic_cancel"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@+id/btnExportToPdf"
+        app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
 
 

@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
               }
               else
               {
-                  Toast.makeText(getApplicationContext(),"Please capture a photo or choose an image from gallery",Toast.LENGTH_SHORT).show();
+                  Toast.makeText(getApplicationContext(),"Text is empty. Please capture a photo or choose an image from gallery",Toast.LENGTH_SHORT).show();
 
               }
 
@@ -172,9 +172,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 captureImage();
-                optionMode();
-                if (detectedText.toString().length()>0)
-                    findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
 
             }
         });
@@ -203,6 +200,15 @@ public class MainActivity extends AppCompatActivity {
                     findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
                 else
                     findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
+            }
+        });
+
+        findViewById(R.id.clear_option).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                detectedTextView.setText("");
+                detectedText.setLength(0);
+
             }
         });
 
