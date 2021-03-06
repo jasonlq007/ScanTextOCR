@@ -17,6 +17,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,18 +49,20 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Stack;
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_GALLERY = 0;
     private static final int REQUEST_CAMERA = 1;
     private static final int MY_PERMISSIONS_REQUESTS = 0;
+    private static Stack<Integer> stk;
+    EditText editTextDetected;
     StringBuilder detectedText = new StringBuilder();
     static int sectionLength=0;
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private Uri imageUri;
-    private TextView detectedTextView;
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -69,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 } else {
+
                     // FIXME: Handle this case the user denied to grant the permissions
                 }
                 break;
@@ -116,9 +120,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        editTextDetected=findViewById(R.id.detected_text) ;
         requestPermissions();
-
+        stk= new Stack<>();
         findViewById(R.id.btnExportToPdf).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -134,40 +138,34 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        findViewById(R.id.takeNextPhoto).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-               imageMode();
-                if (detectedText.toString().length()>0)
-                    findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
-                else
-                    findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
-            }
-        });
+
 
         findViewById(R.id.repeat).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-            String sectionHolder=  detectedText.substring(0,detectedText.length()-sectionLength);
-            detectedText.setLength(0);
-            detectedText.append(sectionHolder);
-            detectedTextView.setText(detectedText);
-            captureImage();
+            try {
+                int popItem=stk.pop();
+                int subLength=detectedText.length()-popItem;
+                Log.v("JCountPop",String.valueOf(popItem));
+
+                Log.v("JCountTotal",String.valueOf(detectedText.length()));
+
+                String sectionHolder=  detectedText.substring(0,subLength);
+                Log.v("JCount2",String.valueOf(subLength));
+
+                detectedText.setLength(0);
+                detectedText.append(sectionHolder);
+                editTextDetected.setText(detectedText);
+            }
+            catch (Exception ex)
+            {
+                Log.e("StringIndexOutOfBound","String exception");
+            }
+
             }
         });
 
-        findViewById(R.id.finishBtn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                imageMode();
-                if (detectedText.toString().length()>0)
-                    findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
-                else
-                    findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
 
-
-            }
-        });
         findViewById(R.id.take_a_photo).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -182,42 +180,26 @@ public class MainActivity extends AppCompatActivity {
                 intent.setType("image/*");
                 intent.setAction(Intent.ACTION_GET_CONTENT);
                 startActivityForResult(intent, REQUEST_GALLERY);
-                optionMode();
-                if (detectedText.toString().length()>0)
-                    findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
-                else
-                    findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
+
             }
         });
 
-        findViewById(R.id.cancel_option).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                detectedTextView.setText("");
-                detectedText.setLength(0);
-                imageMode();
-                if (detectedText.toString().length()>0)
-                    findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
-                else
-                    findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
-            }
-        });
 
         findViewById(R.id.clear_option).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                detectedTextView.setText("");
                 detectedText.setLength(0);
+                editTextDetected.setText("");
 
             }
         });
 
 
-        detectedTextView = (TextView) findViewById(R.id.detected_text);
-        detectedTextView.setMovementMethod(new ScrollingMovementMethod());
     }
 
     private void inspectScanTextBitmap(Bitmap bitmap) {
+        int  tempHolderCount=0;
+
         TextRecognizer scanTextRecognizer = new TextRecognizer.Builder(this).build();
         try {
             if (!scanTextRecognizer.isOperational()) {
@@ -245,42 +227,26 @@ public class MainActivity extends AppCompatActivity {
                     return diffBoundLefts;
                 }
             });
-
             for (TextBlock textBlock : textBlocks) {
                 if (textBlock != null && textBlock.getValue() != null) {
                     detectedText.append(textBlock.getValue());
+                    editTextDetected.setText(detectedText);
                     sectionLength=textBlock.getValue().toString().length();
-                    detectedText.append("\n");
-                }
-            }
+                    tempHolderCount=tempHolderCount+ sectionLength;
+                  //  detectedText.append("\n");
 
-            detectedTextView.setText(detectedText);
+                }
+
+            }
+            Log.v("JCount1",String.valueOf(tempHolderCount));
+            stk.push(tempHolderCount);
+
         }
         finally {
             scanTextRecognizer.release();
         }
     }
-    private void imageMode()
-    {
-        findViewById(R.id.takeNextPhoto).setVisibility(View.INVISIBLE);
-        findViewById(R.id.finishBtn).setVisibility(View.INVISIBLE);
-        findViewById(R.id.repeat).setVisibility(View.INVISIBLE);
-        findViewById(R.id.cancel_option).setVisibility(View.INVISIBLE);
-        findViewById(R.id.take_a_photo).setVisibility(View.VISIBLE);
-        findViewById(R.id.btnGallery).setVisibility(View.VISIBLE);
-        findViewById(R.id.btnExportToPdf).setVisibility(View.VISIBLE);
-    }
 
-    private void optionMode()
-    {
-        findViewById(R.id.takeNextPhoto).setVisibility(View.VISIBLE);
-        findViewById(R.id.finishBtn).setVisibility(View.VISIBLE);
-        findViewById(R.id.repeat).setVisibility(View.VISIBLE);
-        findViewById(R.id.cancel_option).setVisibility(View.VISIBLE);
-        findViewById(R.id.take_a_photo).setVisibility(View.INVISIBLE);
-        findViewById(R.id.btnGallery).setVisibility(View.INVISIBLE);
-        findViewById(R.id.btnExportToPdf).setVisibility(View.INVISIBLE);
-    }
 
     private void exportPDF(String detectedText)
     {
