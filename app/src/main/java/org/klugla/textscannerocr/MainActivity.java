@@ -17,6 +17,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,6 +31,7 @@ import androidx.core.content.FileProvider;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -59,11 +61,9 @@ public class MainActivity extends AppCompatActivity {
     EditText editTextDetected;
     StringBuilder detectedText = new StringBuilder();
     static int sectionLength=0;
-
+    FloatingActionButton galleryButton, cameraButton, pdfExportButton, clearButton, undoButton;
     private static final String TAG = MainActivity.class.getSimpleName();
-
     private Uri imageUri;
-
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[], @NonNull int[] grantResults) {
@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void requestPermissions()
     {
-        List<String> requiredPermissions = new ArrayList<>();
+         List<String> requiredPermissions = new ArrayList<>();
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -116,17 +116,40 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void initView()
+    {
+        clearButton=(FloatingActionButton)findViewById(R.id.clear_option);
+        undoButton=(FloatingActionButton)findViewById(R.id.repeat);
+        cameraButton=(FloatingActionButton)findViewById(R.id.take_a_photo);
+        pdfExportButton=(FloatingActionButton)findViewById(R.id.btnExportToPdf);
+        galleryButton=(FloatingActionButton)findViewById(R.id.btnGallery);
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         editTextDetected=findViewById(R.id.detected_text) ;
         requestPermissions();
+        initView();
         stk= new Stack<>();
-        findViewById(R.id.btnExportToPdf).setOnClickListener(new View.OnClickListener() {
+        pdfExportButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-              if (detectedText.toString().length()>0)
+                if(ContextCompat.checkSelfPermission(getApplicationContext(),
+                        Manifest.permission.CAMERA)
+                        != PackageManager.PERMISSION_GRANTED||
+                        ContextCompat.checkSelfPermission(getApplicationContext(),
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                                != PackageManager.PERMISSION_GRANTED||
+                        ContextCompat.checkSelfPermission(getApplicationContext(),
+                                Manifest.permission.READ_EXTERNAL_STORAGE)
+                                != PackageManager.PERMISSION_GRANTED)
+                {
+                    requestPermissions();
+                }
+              else  if (detectedText.toString().length()>0)
               {
                   exportPDF(detectedText.toString());
               }
@@ -140,19 +163,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        findViewById(R.id.repeat).setOnClickListener(new View.OnClickListener() {
+        undoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
             try {
                 int popItem=stk.pop();
                 int subLength=detectedText.length()-popItem;
-                Log.v("JCountPop",String.valueOf(popItem));
-
-                Log.v("JCountTotal",String.valueOf(detectedText.length()));
-
                 String sectionHolder=  detectedText.substring(0,subLength);
-                Log.v("JCount2",String.valueOf(subLength));
-
                 detectedText.setLength(0);
                 detectedText.append(sectionHolder);
                 editTextDetected.setText(detectedText);
@@ -166,26 +183,57 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        findViewById(R.id.take_a_photo).setOnClickListener(new View.OnClickListener() {
+        cameraButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                captureImage();
+                if(ContextCompat.checkSelfPermission(getApplicationContext(),
+                        Manifest.permission.CAMERA)
+                        != PackageManager.PERMISSION_GRANTED||
+                        ContextCompat.checkSelfPermission(getApplicationContext(),
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                                != PackageManager.PERMISSION_GRANTED||
+                        ContextCompat.checkSelfPermission(getApplicationContext(),
+                                Manifest.permission.READ_EXTERNAL_STORAGE)
+                                != PackageManager.PERMISSION_GRANTED)
+                {
+                    requestPermissions();
+                }
+                else
+                {
+                    captureImage();
+                }
 
             }
         });
-        findViewById(R.id.btnGallery).setOnClickListener(new View.OnClickListener() {
+        galleryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setType("image/*");
-                intent.setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(intent, REQUEST_GALLERY);
+                if(ContextCompat.checkSelfPermission(getApplicationContext(),
+                        Manifest.permission.CAMERA)
+                        != PackageManager.PERMISSION_GRANTED||
+                        ContextCompat.checkSelfPermission(getApplicationContext(),
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                                != PackageManager.PERMISSION_GRANTED||
+                        ContextCompat.checkSelfPermission(getApplicationContext(),
+                                Manifest.permission.READ_EXTERNAL_STORAGE)
+                                != PackageManager.PERMISSION_GRANTED)
+                {
+                    requestPermissions();
+                }
+                else
+                {
+                    Intent intent = new Intent();
+                    intent.setType("image/*");
+                    intent.setAction(Intent.ACTION_GET_CONTENT);
+                    startActivityForResult(intent, REQUEST_GALLERY);
+                }
+
 
             }
         });
 
 
-        findViewById(R.id.clear_option).setOnClickListener(new View.OnClickListener() {
+        clearButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 detectedText.setLength(0);
@@ -233,7 +281,6 @@ public class MainActivity extends AppCompatActivity {
                     editTextDetected.setText(detectedText);
                     sectionLength=textBlock.getValue().toString().length();
                     tempHolderCount=tempHolderCount+ sectionLength;
-                  //  detectedText.append("\n");
 
                 }
 
@@ -301,8 +348,6 @@ public class MainActivity extends AppCompatActivity {
         intent.setDataAndType(apkURI, "application/pdf");
         intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-
         startActivity(intent);
     }
 
