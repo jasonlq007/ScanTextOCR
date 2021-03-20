@@ -15,6 +15,10 @@ import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseArray;
+import android.view.ContextMenu;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -127,11 +131,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        editTextDetected=findViewById(R.id.detected_text) ;
+        editTextDetected=findViewById(R.id.detected_text);
         requestPermissions();
         initView();
         stk= new Stack<>();
@@ -256,6 +261,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.options_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
     private void inspectScanTextBitmap(Bitmap bitmap) {
         int  tempHolderCount=0;
 
@@ -305,7 +316,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.search_item:
+                Intent intent = new Intent (Intent.ACTION_VIEW , Uri.parse("mailto:" + "kluglostech@gmail.com"));
+                startActivity(intent);
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
+    }
     private void exportPDF(String detectedText)
     {
         SimpleDateFormat ocrDateFormat = new SimpleDateFormat("ddMMyyyyhhmmss");
@@ -403,15 +424,8 @@ public class MainActivity extends AppCompatActivity {
                     if (resultCode == RESULT_OK) {
                         Uri resultUri = result.getUri();
                         inspectOCR(resultUri);
-                        //    Picasso.with(this).load(resultUri).into(userpic);
                     }
                 }
-//                if (resultCode == RESULT_OK) {
-//                    if (imageUri != null) {
-//                        inspectOCR();
-//                        //inspectOCR(imageUri);
-//                    }
-//                }
                 break;
             default:
                 super.onActivityResult(requestCode, resultCode, data);
@@ -422,7 +436,6 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 Uri resultUri = result.getUri();
                 inspectOCR(resultUri);
-                //    Picasso.with(this).load(resultUri).into(userpic);
             }
         }
     }
