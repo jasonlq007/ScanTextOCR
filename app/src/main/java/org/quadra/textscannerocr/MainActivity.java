@@ -1,4 +1,4 @@
-package org.klugla.textscannerocr;
+package org.quadra.textscannerocr;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -12,14 +12,11 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 
-import android.text.method.ScrollingMovementMethod;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -38,7 +35,11 @@ import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.squareup.picasso.Picasso;
+import com.theartofdev.edmodo.cropper.CropImage;
 
+
+import org.klugla.textscannerocr.R;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -200,7 +201,17 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else
                 {
-                    captureImage();
+                    String filename = System.currentTimeMillis() + ".jpg";
+                    ContentValues values = new ContentValues();
+                    values.put(MediaStore.Images.Media.TITLE, filename);
+                    values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                    imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                    Intent intent = new Intent();
+                    intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
+                    intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+                    CropImage.activity().start(MainActivity.this);
+
+                 //   captureImage();
                 }
 
             }
@@ -387,15 +398,32 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             case REQUEST_CAMERA:
-                if (resultCode == RESULT_OK) {
-                    if (imageUri != null) {
-                        inspectOCR(imageUri);
+                if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+                    CropImage.ActivityResult result = CropImage.getActivityResult(data);
+                    if (resultCode == RESULT_OK) {
+                        Uri resultUri = result.getUri();
+                        inspectOCR(resultUri);
+                        //    Picasso.with(this).load(resultUri).into(userpic);
                     }
                 }
+//                if (resultCode == RESULT_OK) {
+//                    if (imageUri != null) {
+//                        inspectOCR();
+//                        //inspectOCR(imageUri);
+//                    }
+//                }
                 break;
             default:
                 super.onActivityResult(requestCode, resultCode, data);
                 break;
+        }
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+            if (resultCode == RESULT_OK) {
+                Uri resultUri = result.getUri();
+                inspectOCR(resultUri);
+                //    Picasso.with(this).load(resultUri).into(userpic);
+            }
         }
     }
 }

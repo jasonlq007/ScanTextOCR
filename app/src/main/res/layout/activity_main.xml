@@ -9,12 +9,11 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="org.klugla.textscannerocr.MainActivity">
+    tools:context="org.quadra.textscannerocr.MainActivity">
 
 <androidx.constraintlayout.widget.ConstraintLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
 
     <EditText
         android:id="@+id/detected_text"
@@ -37,6 +36,7 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center"
+
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintStart_toStartOf="parent"
     >
@@ -45,7 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|right"
-        android:layout_margin="5dp"
+        android:layout_marginBottom="5dp"
         android:background="#ffffff"
         android:src="@drawable/ic_replay_24px"
         android:visibility="visible"
@@ -63,7 +63,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|right"
         android:background="#ffffff"
-        android:visibility="visible"
+        android:visibility="gone"
         android:layout_margin="5dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/take_a_photo"
